@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal & Topik Presentasi Bahasa Inggris</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        .card-hover:hover { transform: translateY(-5px); transition: all 0.3s ease; }
+        
+        /* Modal Transitions */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: visible !important; }
+        
+        /* Grade Badge Animation */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .grade-badge { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i data-lucide="presentation" class="w-8 h-8 text-yellow-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold leading-none">English Presentation</h1>
+                    <p class="text-xs text-blue-200">UAS Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="admin-badge" class="hidden bg-yellow-400 text-blue-900 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                    <i data-lucide="shield-check" class="w-3 h-3"></i> ADMIN MODE
+                </div>
+                <button id="logout-btn" class="hidden text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Controls (Only visible when logged in) -->
+    <div id="admin-controls" class="hidden bg-gray-800 text-white p-4 shadow-inner">
+        <div class="max-w-7xl mx-auto flex flex-wrap gap-4 justify-between items-center">
+            <h3 class="font-bold flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4"></i> Admin Panel</h3>
+            <div class="flex gap-2">
+                <button onclick="openSettingsModal()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4"></i> Edit Deadline Alert
+                </button>
+                <button onclick="openGroupModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Kelompok
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Urgent Alert Section (Dynamic) -->
+    <div id="alert-section" class="bg-red-50 border-b-4 border-red-500 p-4 shadow-md transition-all">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div class="bg-red-100 p-3 rounded-full shrink-0">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-red-600"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-red-700" id="alert-title">PENTING: Deadline Pengumpulan Topik!</h2>
+                <p class="text-sm md:text-base text-gray-700 mt-1" id="alert-message">
+                    Bagi kelompok yang <span class="font-bold text-red-600 underline">BELUM MENYERTAKAN TOPIK</span>, 
+                    wajib segera mengumpulkan data.
+                </p>
+                <div class="mt-2 flex items-center gap-2 text-sm font-semibold text-red-800 bg-red-100 w-fit px-3 py-1 rounded">
+                    <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+                    <span id="alert-deadline">Tenggat: Pertemuan 12 (Speaking & Presentation)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Filter Tabs -->
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+            <button onclick="filterProdi('all')" class="tab-btn active bg-blue-600 text-white px-6 py-2 rounded-full shadow-md font-semibold hover:bg-blue-700 transition">
+                Semua Prodi
+            </button>
+            <button onclick="filterProdi('transportasi')" class="tab-btn bg-white text-gray-600 px-6 py-2 rounded-full shadow-sm border hover:bg-gray-100 transition">
+                S1 Transportasi
+            </button>
+            <button onclick="filterProdi('perdagangan')" class="tab-btn bg-white text-gray-600 px-6 py-2 rounded-full shadow-sm border hover:bg-gray-100 transition">
+                S1 Perdagangan Int.
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="max-w-xl mx-auto mb-10 px-4">
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i data-lucide="search" class="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition"></i>
+                </div>
+                <input type="text" id="search-input" oninput="renderAllGroups()" 
+                    class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm transition duration-150 ease-in-out" 
+                    placeholder="Cari nama mahasiswa, kelompok, atau topik...">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onclick="clearSearch()">
+                     <i data-lucide="x-circle" class="h-5 w-5 text-gray-300 hover:text-gray-500 hidden" id="clear-search-btn"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-spinner" class="flex justify-center py-10">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+            <p class="ml-3 text-blue-900 font-semibold mt-2">Menghubungkan ke Database...</p>
+        </div>
+
+        <!-- Empty State / Setup (Shown if DB is empty) -->
+        <div id="empty-state" class="hidden text-center py-12 px-4">
+            <div class="bg-white p-8 rounded-xl shadow-lg inline-block max-w-lg mx-auto border-t-4 border-blue-600">
+                <div class="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="database" class="w-10 h-10 text-blue-600"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">Database Siap Diisi</h3>
+                <p class="text-gray-600 mb-6 text-sm">
+                    Klik tombol di bawah untuk memasukkan <strong>semua data kelompok</strong> (termasuk yang baru ditambahkan) ke dalam sistem.
+                </p>
+                <button onclick="seedInitialData()" id="seed-btn" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:bg-blue-700 hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                    <span>Import Semua Data (Lama + Baru)</span>
+                </button>
+                <p id="seed-status" class="text-xs text-gray-400 mt-3 hidden">Sedang memproses...</p>
+            </div>
+        </div>
+
+        <!-- No Search Results -->
+        <div id="no-results" class="hidden text-center py-12">
+            <div class="inline-block p-4 bg-gray-100 rounded-full mb-3">
+                <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600">Tidak ditemukan hasil</h3>
+            <p class="text-sm text-gray-500">Coba kata kunci lain atau periksa ejaan nama.</p>
+        </div>
+
+        <!-- S1 Transportasi Section -->
+        <section id="transportasi-section" class="mb-12 prodi-section hidden">
+            <div class="flex items-center gap-3 mb-6 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-2xl font-bold text-gray-800">S1 Transportasi</h2>
+                <span id="count-trans" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">0 Kelompok</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6" id="trans-container"></div>
+        </section>
+
+        <!-- S1 Perdagangan Internasional Section -->
+        <section id="perdagangan-section" class="mb-12 prodi-section hidden">
+            <div class="flex items-center gap-3 mb-6 border-l-4 border-green-600 pl-4">
+                <h2 class="text-2xl font-bold text-gray-800">S1 Perdagangan Internasional</h2>
+                <span id="count-pi" class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">0 Kelompok</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6" id="pi-container"></div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center flex flex-col items-center gap-4">
+            <p class="text-sm opacity-75">&copy; 2024 English Presentation Dashboard. Pastikan data Anda benar untuk nilai UAS.</p>
+            <button id="login-trigger-btn" onclick="openLoginModal()" class="text-xs text-gray-500 hover:text-white underline">
+                Admin Login
+            </button>
+        </div>
+    </footer>
+
+    <!-- MODAL: LOGIN -->
+    <div id="login-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeModal('login-modal')"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold">Admin Login</p>
+                    <div class="cursor-pointer z-50" onclick="closeModal('login-modal')">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="my-5">
+                    <div class="bg-yellow-50 border border-yellow-200 p-3 mb-4 rounded text-xs text-yellow-800">
+                        <p><strong>Demo Mode:</strong></p>
+                        <p>Username: <code>admin</code></p>
+                        <p>Password: <code>admin</code></p>
+                    </div>
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="admin" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="******************" required>
+                        </div>
+                        <div class="flex items-center justify-end">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                                Sign In
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT GROUP -->
+    <div id="group-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeModal('group-modal')"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-3xl mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-2xl font-bold" id="group-modal-title">Edit Kelompok</p>
+                    <div class="cursor-pointer z-50" onclick="closeModal('group-modal')">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <form id="group-form" class="mt-4">
+                    <input type="hidden" id="edit-doc-id">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Nama Kelompok</label>
+                            <input id="form-groupName" class="w-full border p-2 rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-1">Prodi</label>
+                            <select id="form-prodi" class="w-full border p-2 rounded">
+                                <option value="transportasi">S1 Transportasi</option>
+                                <option value="perdagangan">S1 Perdagangan Internasional</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">Topik Presentasi</label>
+                        <input id="form-topic" class="w-full border p-2 rounded" placeholder="Kosongkan jika belum ada">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-1">Deskripsi Singkat</label>
+                        <textarea id="form-desc" class="w-full border p-2 rounded" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-4 bg-gray-50 p-3 rounded border">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm font-bold">Anggota Kelompok</label>
+                            <button type="button" onclick="addMemberField()" class="text-xs bg-green-500 text-white px-2 py-1 rounded">+ Tambah Anggota</button>
+                        </div>
+                        <div id="members-container" class="space-y-2">
+                            <!-- Member fields generated here -->
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-4 pt-4 border-t">
+                        <button type="button" onclick="closeModal('group-modal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded">Batal</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SETTINGS -->
+    <div id="settings-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeModal('settings-modal')"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-lg mx-auto rounded shadow-lg z-50">
+            <div class="modal-content py-4 text-left px-6">
+                <h3 class="text-xl font-bold mb-4">Pengaturan Alert</h3>
+                <form id="settings-form">
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold mb-1">Judul Alert</label>
+                        <input id="set-title" class="w-full border p-2 rounded">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold mb-1">Pesan Utama</label>
+                        <textarea id="set-message" class="w-full border p-2 rounded" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-bold mb-1">Teks Deadline</label>
+                        <input id="set-deadline" class="w-full border p-2 rounded">
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Update Alert</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: GRADING (RUBRIK PENILAIAN) -->
+    <div id="grading-modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" onclick="closeModal('grading-modal')"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-lg mx-auto rounded shadow-lg z-50 overflow-y-auto max-h-[90vh]">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <p class="text-xl font-bold">Rubrik Penilaian Presentasi</p>
+                    <div class="cursor-pointer z-50" onclick="closeModal('grading-modal')">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                
+                <form id="grading-form" class="mt-4">
+                    <input type="hidden" id="grade-group-id">
+                    
+                    <div class="bg-blue-50 p-3 rounded mb-4 text-sm text-blue-800">
+                        <p><strong>Kelompok:</strong> <span id="grade-group-name">Nama Kelompok</span></p>
+                    </div>
+
+                    <!-- Criteria Inputs -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex justify-between text-sm font-bold mb-1">
+                                <span>Content & Organization</span>
+                                <span class="text-gray-500">Max: 25</span>
+                            </label>
+                            <input type="number" id="score-content" min="0" max="25" class="w-full border p-2 rounded score-input" placeholder="0-25" required>
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-sm font-bold mb-1">
+                                <span>Delivery & Fluency</span>
+                                <span class="text-gray-500">Max: 25</span>
+                            </label>
+                            <input type="number" id="score-delivery" min="0" max="25" class="w-full border p-2 rounded score-input" placeholder="0-25" required>
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-sm font-bold mb-1">
+                                <span>Visual Aids & Design</span>
+                                <span class="text-gray-500">Max: 25</span>
+                            </label>
+                            <input type="number" id="score-visual" min="0" max="25" class="w-full border p-2 rounded score-input" placeholder="0-25" required>
+                        </div>
+                        <div>
+                            <label class="flex justify-between text-sm font-bold mb-1">
+                                <span>Q&A Interaction</span>
+                                <span class="text-gray-500">Max: 25</span>
+                            </label>
+                            <input type="number" id="score-qa" min="0" max="25" class="w-full border p-2 rounded score-input" placeholder="0-25" required>
+                        </div>
+                    </div>
+
+                    <!-- Total Score Display -->
+                    <div class="mt-6 flex justify-between items-center bg-gray-100 p-4 rounded-lg">
+                        <span class="font-bold text-lg text-gray-700">Total Nilai:</span>
+                        <span id="grade-total" class="font-bold text-3xl text-blue-600">0</span>
+                    </div>
+
+                    <div class="mb-4 mt-4">
+                        <label class="block text-sm font-bold mb-1">Catatan / Feedback</label>
+                        <textarea id="grade-feedback" class="w-full border p-2 rounded text-sm" rows="3" placeholder="Masukan dan saran untuk kelompok..."></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-4 pt-4 border-t">
+                        <button type="button" onclick="closeModal('grading-modal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded">Batal</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Simpan Nilai</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 1. DYNAMIC CONFIGURATION (System Requirement)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Constants
+        const SETTINGS_DOC_ID = 'global_alert';
+
+        // State Variables
+        let currentUser = null; // Auth User
+        let isAdminMode = false; // Local Admin Flag
+        let groupsData = [];
+        let alertSettings = null;
+        let currentFilter = 'all'; // Default filter
+
+        // --- AUTHENTICATION LOGIC ---
+        
+        // Auto-Auth (Anonymous/Custom Token) to access Firestore
+        const initAuth = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+          } catch (e) {
+            console.error("Auth Error:", e);
+          }
+        };
+        initAuth();
+
+        // Local Admin Login (Simulation)
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Simple Client-Side Check for Demo
+            if (username === 'admin' && password === 'admin') {
+                isAdminMode = true;
+                closeModal('login-modal');
+                updateAdminUI();
+                alert("Login Admin Berhasil! (Mode Edit Aktif)");
+            } else {
+                alert("Username atau Password salah! (Coba: admin/admin)");
+            }
+        });
+
+        // Logout (Exit Admin Mode)
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            isAdminMode = false;
+            updateAdminUI();
+        });
+
+        function updateAdminUI() {
+            const adminControls = document.getElementById('admin-controls');
+            const adminBadge = document.getElementById('admin-badge');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginTrigger = document.getElementById('login-trigger-btn');
+
+            if (isAdminMode) {
+                adminControls.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                loginTrigger.classList.add('hidden');
+            } else {
+                adminControls.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                loginTrigger.classList.remove('hidden');
+            }
+            renderAllGroups(); // Re-render to show/hide edit buttons
+        }
+
+        // --- FIRESTORE LOGIC ---
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return; // Wait for auth
+            currentUser = user;
+
+            // 1. Listen to Groups Data
+            const groupsRef = collection(db, "artifacts", appId, "public", "data", "groups");
+            
+            onSnapshot(groupsRef, (snapshot) => {
+                groupsData = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Sort in Memory
+                groupsData.sort((a, b) => (a.groupName || "").localeCompare(b.groupName || ""));
+
+                document.getElementById('loading-spinner').style.display = 'none';
+                
+                // CHECK IF DATA IS EMPTY
+                const emptyState = document.getElementById('empty-state');
+                const transSection = document.getElementById('transportasi-section');
+                const piSection = document.getElementById('perdagangan-section');
+
+                if (groupsData.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    transSection.classList.add('hidden');
+                    piSection.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    // Visibility handled by renderAllGroups
+                    renderAllGroups();
+                }
+                
+            }, (error) => {
+                console.error("Error fetching groups:", error);
+                document.getElementById('loading-spinner').innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+            });
+
+            // 2. Listen to Settings Data
+            const settingDocRef = doc(db, "artifacts", appId, "public", "data", "settings", SETTINGS_DOC_ID);
+            onSnapshot(settingDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    alertSettings = docSnap.data();
+                    updateAlertUI(alertSettings);
+                } else {
+                    // Set default if not exists
+                    const defaultAlert = {
+                        title: "PENTING: Deadline Pengumpulan Topik!",
+                        message: "Bagi kelompok yang BELUM MENYERTAKAN TOPIK, wajib segera mengumpulkan data.",
+                        deadline: "Tenggat: Pertemuan 12"
+                    };
+                    setDoc(settingDocRef, defaultAlert);
+                }
+            });
+        });
+
+        // --- RENDERING FUNCTIONS ---
+
+        function updateAlertUI(data) {
+            document.getElementById('alert-title').innerText = data.title;
+            // Safe message replacement
+            document.getElementById('alert-message').innerHTML = data.message.replace("BELUM MENYERTAKAN TOPIK", `<span class="font-bold text-red-600 underline">BELUM MENYERTAKAN TOPIK</span>`);
+            document.getElementById('alert-deadline').innerText = data.deadline;
+        }
+
+        window.renderAllGroups = function() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const clearBtn = document.getElementById('clear-search-btn');
+            
+            if (clearBtn) {
+                if(searchTerm.length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+
+            // Filter by Search Term First
+            const searchFilteredData = groupsData.filter(group => {
+                const groupName = (group.groupName || '').toLowerCase();
+                const topic = (group.topic || '').toLowerCase();
+                const members = group.members || [];
+                const memberMatch = members.some(m => (m.name || '').toLowerCase().includes(searchTerm));
+                
+                return groupName.includes(searchTerm) || topic.includes(searchTerm) || memberMatch;
+            });
+
+            // Then Filter by Prodi
+            const transData = searchFilteredData.filter(g => g.prodi === 'transportasi');
+            const piData = searchFilteredData.filter(g => g.prodi === 'perdagangan');
+
+            const transSection = document.getElementById('transportasi-section');
+            const piSection = document.getElementById('perdagangan-section');
+            const noResults = document.getElementById('no-results');
+
+            // Handle No Results State
+            if (searchFilteredData.length === 0 && groupsData.length > 0) {
+                noResults.classList.remove('hidden');
+                transSection.classList.add('hidden');
+                piSection.classList.add('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                
+                // Handle Display Logic based on Tab Selection
+                if (currentFilter === 'all') {
+                    if (transData.length > 0) {
+                        transSection.classList.remove('hidden');
+                        renderCards(transData, 'trans-container');
+                    } else {
+                        transSection.classList.add('hidden');
+                    }
+
+                    if (piData.length > 0) {
+                        piSection.classList.remove('hidden');
+                        renderCards(piData, 'pi-container');
+                    } else {
+                        piSection.classList.add('hidden');
+                    }
+                } else if (currentFilter === 'transportasi') {
+                    transSection.classList.remove('hidden');
+                    piSection.classList.add('hidden');
+                    renderCards(transData, 'trans-container');
+                    // if filtered results are empty for this category but search matched others, it's fine
+                } else if (currentFilter === 'perdagangan') {
+                    transSection.classList.add('hidden');
+                    piSection.classList.remove('hidden');
+                    renderCards(piData, 'pi-container');
+                }
+            }
+
+            document.getElementById('count-trans').innerText = `${transData.length} Kelompok`;
+            document.getElementById('count-pi').innerText = `${piData.length} Kelompok`;
+            
+            // Re-initialize icons
+            lucide.createIcons();
+        }
+
+        function createMemberHTML(members, searchTerm = '') {
+            if (!members || members.length === 0) return '<li class="text-sm text-gray-400 italic">Belum ada anggota</li>';
+            
+            return members.map(m => {
+                const name = m.name || '';
+                // Highlight search match if search term exists
+                // Note: Simple highlighting
+                return `
+                <li class="flex justify-between items-start text-sm py-1 border-b border-gray-100 last:border-0">
+                    <div>
+                        <span class="font-medium text-gray-700 block">${name}</span>
+                        <span class="text-xs text-gray-400">${m.nim || ''}</span>
+                    </div>
+                    ${m.role ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded ml-2 text-right max-w-[40%]">${m.role}</span>` : ''}
+                </li>
+            `}).join('');
+        }
+
+        function renderCards(data, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            data.forEach(group => {
+                const isMissing = !group.topic || group.topic.trim() === "" || group.status === 'missing';
+                const borderColor = isMissing ? 'border-red-500' : 'border-gray-200';
+                const bgHeader = isMissing ? 'bg-red-50' : 'bg-white';
+                const textColor = isMissing ? 'text-red-600' : 'text-blue-900';
+                const topicText = isMissing ? 'TOPIK BELUM ADA / TIDAK LENGKAP' : group.topic;
+                const icon = isMissing ? 'alert-circle' : 'file-text';
+
+                // Display Grade if exists
+                let gradeDisplay = '';
+                if (group.grade && group.grade.total) {
+                    gradeDisplay = `
+                        <div class="absolute top-2 right-2 bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg shadow-lg grade-badge z-10 border-2 border-white">
+                            ${group.grade.total}
+                        </div>
+                    `;
+                }
+
+                // Admin Buttons
+                let adminActions = '';
+                if (isAdminMode) {
+                    adminActions = `
+                        <div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                            <button onclick="openGradingModal('${group.id}')" class="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 py-1 rounded text-xs font-bold border border-blue-200">
+                                ${group.grade ? 'Edit Nilai' : 'Nilai'}
+                            </button>
+                            <button onclick="editGroup('${group.id}')" class="flex-1 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 py-1 rounded text-xs font-bold border border-yellow-200">Edit</button>
+                            <button onclick="deleteGroup('${group.id}')" class="flex-1 bg-red-50 text-red-700 hover:bg-red-100 py-1 rounded text-xs font-bold border border-red-200">Hapus</button>
+                        </div>
+                    `;
+                }
+
+                const card = `
+                    <div class="bg-white rounded-xl shadow-md border-t-4 ${borderColor} overflow-hidden card-hover flex flex-col h-full relative group-card">
+                        ${gradeDisplay}
+                        <div class="p-5 ${bgHeader} border-b border-gray-100">
+                            <div class="flex justify-between items-start mb-2 pr-10">
+                                <h3 class="font-bold text-lg text-gray-800 uppercase tracking-wide">${group.groupName}</h3>
+                                ${isMissing 
+                                    ? `<span class="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse">ACTION NEEDED</span>`
+                                    : `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">READY</span>`
+                                }
+                            </div>
+                            <div class="flex items-start gap-2 mt-2">
+                                <i data-lucide="${icon}" class="w-5 h-5 ${textColor} shrink-0 mt-0.5"></i>
+                                <div>
+                                    <h4 class="font-bold ${textColor} leading-tight">${topicText}</h4>
+                                    <p class="text-xs text-gray-500 mt-1 italic">${group.desc || '-'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 bg-white flex-grow flex flex-col">
+                            <h5 class="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-1">
+                                <i data-lucide="users" class="w-3 h-3"></i> Anggota Kelompok
+                            </h5>
+                            <ul class="space-y-1 mb-auto">
+                                ${createMemberHTML(group.members)}
+                            </ul>
+                            
+                            ${group.grade ? `<div class="mt-3 text-xs bg-gray-50 p-2 rounded text-gray-600 italic">Feedback: "${group.grade.feedback || 'Good job!'}"</div>` : ''}
+                            
+                            ${adminActions}
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        // --- ADMIN ACTIONS (Global Scope) ---
+
+        window.openGroupModal = function(mode = 'add') {
+            document.getElementById('group-form').reset();
+            document.getElementById('members-container').innerHTML = '';
+            addMemberField(); // Default empty field
+
+            const title = document.getElementById('group-modal-title');
+            const docIdInput = document.getElementById('edit-doc-id');
+            
+            if (mode === 'add') {
+                title.innerText = "Tambah Kelompok Baru";
+                docIdInput.value = "";
+            }
+            toggleModal('group-modal');
+        }
+
+        window.editGroup = function(id) {
+            const group = groupsData.find(g => g.id === id);
+            if (!group) return;
+
+            document.getElementById('group-modal-title').innerText = "Edit Kelompok";
+            document.getElementById('edit-doc-id').value = group.id;
+            
+            document.getElementById('form-groupName').value = group.groupName;
+            document.getElementById('form-prodi').value = group.prodi;
+            document.getElementById('form-topic').value = group.topic || "";
+            document.getElementById('form-desc').value = group.desc || "";
+
+            const memContainer = document.getElementById('members-container');
+            memContainer.innerHTML = '';
+            
+            if (group.members && group.members.length > 0) {
+                group.members.forEach(m => addMemberField(m));
+            } else {
+                addMemberField();
+            }
+
+            toggleModal('group-modal');
+        }
+
+        window.deleteGroup = async function(id) {
+            if(confirm("Yakin ingin menghapus kelompok ini?")) {
+                const docRef = doc(db, "artifacts", appId, "public", "data", "groups", id);
+                await deleteDoc(docRef);
+            }
+        }
+
+        document.getElementById('group-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const memberDivs = document.querySelectorAll('.member-entry');
+            const members = [];
+            memberDivs.forEach(div => {
+                const name = div.querySelector('.mem-name').value;
+                const nim = div.querySelector('.mem-nim').value;
+                const role = div.querySelector('.mem-role').value;
+                if(name) members.push({ name, nim, role });
+            });
+
+            const groupData = {
+                groupName: document.getElementById('form-groupName').value,
+                prodi: document.getElementById('form-prodi').value,
+                topic: document.getElementById('form-topic').value,
+                desc: document.getElementById('form-desc').value,
+                members: members,
+                updatedAt: new Date()
+            };
+
+            const docId = document.getElementById('edit-doc-id').value;
+
+            try {
+                if (docId) {
+                    const docRef = doc(db, "artifacts", appId, "public", "data", "groups", docId);
+                    await updateDoc(docRef, groupData);
+                } else {
+                    const colRef = collection(db, "artifacts", appId, "public", "data", "groups");
+                    await addDoc(colRef, groupData);
+                }
+                closeModal('group-modal');
+            } catch (err) {
+                alert("Error saving: " + err.message);
+            }
+        });
+
+        // --- GRADING ACTIONS ---
+        window.openGradingModal = function(id) {
+            const group = groupsData.find(g => g.id === id);
+            if (!group) return;
+
+            document.getElementById('grade-group-id').value = group.id;
+            document.getElementById('grade-group-name').innerText = group.groupName;
+            
+            // Populate if grade exists
+            if (group.grade) {
+                document.getElementById('score-content').value = group.grade.content || '';
+                document.getElementById('score-delivery').value = group.grade.delivery || '';
+                document.getElementById('score-visual').value = group.grade.visual || '';
+                document.getElementById('score-qa').value = group.grade.qa || '';
+                document.getElementById('grade-feedback').value = group.grade.feedback || '';
+                document.getElementById('grade-total').innerText = group.grade.total || 0;
+            } else {
+                // Reset form
+                document.getElementById('grading-form').reset();
+                document.getElementById('grade-total').innerText = '0';
+                document.getElementById('grade-group-id').value = group.id; // re-set after reset
+            }
+
+            toggleModal('grading-modal');
+        }
+
+        // Live Calculation
+        const scoreInputs = document.querySelectorAll('.score-input');
+        scoreInputs.forEach(input => {
+            input.addEventListener('input', calculateTotalGrade);
+        });
+
+        function calculateTotalGrade() {
+            let total = 0;
+            scoreInputs.forEach(input => {
+                let val = parseInt(input.value) || 0;
+                if (val > 25) { val = 25; input.value = 25; } // Clamp
+                if (val < 0) { val = 0; input.value = 0; }
+                total += val;
+            });
+            document.getElementById('grade-total').innerText = total;
+        }
+
+        document.getElementById('grading-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const groupId = document.getElementById('grade-group-id').value;
+            
+            const gradeData = {
+                content: parseInt(document.getElementById('score-content').value) || 0,
+                delivery: parseInt(document.getElementById('score-delivery').value) || 0,
+                visual: parseInt(document.getElementById('score-visual').value) || 0,
+                qa: parseInt(document.getElementById('score-qa').value) || 0,
+                total: parseInt(document.getElementById('grade-total').innerText) || 0,
+                feedback: document.getElementById('grade-feedback').value,
+                gradedAt: new Date()
+            };
+
+            try {
+                const docRef = doc(db, "artifacts", appId, "public", "data", "groups", groupId);
+                await updateDoc(docRef, { grade: gradeData });
+                closeModal('grading-modal');
+            } catch(err) {
+                alert("Gagal menyimpan nilai: " + err.message);
+            }
+        });
+
+        window.addMemberField = function(data = {name: '', nim: '', role: ''}) {
+            const div = document.createElement('div');
+            div.className = "member-entry grid grid-cols-7 gap-2 mb-2 items-center";
+            div.innerHTML = `
+                <input class="mem-name col-span-3 border p-1 rounded text-sm" placeholder="Nama" value="${data.name}">
+                <input class="mem-nim col-span-2 border p-1 rounded text-sm" placeholder="NIM" value="${data.nim}">
+                <input class="mem-role col-span-2 border p-1 rounded text-sm" placeholder="Role (e.g. Presenter)" value="${data.role || ''}">
+            `;
+            document.getElementById('members-container').appendChild(div);
+        }
+
+        // Settings Modal Actions
+        window.openSettingsModal = function() {
+            if(alertSettings) {
+                document.getElementById('set-title').value = alertSettings.title;
+                document.getElementById('set-message').value = alertSettings.message;
+                document.getElementById('set-deadline').value = alertSettings.deadline;
+            }
+            toggleModal('settings-modal');
+        }
+
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newData = {
+                title: document.getElementById('set-title').value,
+                message: document.getElementById('set-message').value,
+                deadline: document.getElementById('set-deadline').value
+            };
+            
+            try {
+                const settingDocRef = doc(db, "artifacts", appId, "public", "data", "settings", SETTINGS_DOC_ID);
+                await setDoc(settingDocRef, newData);
+                closeModal('settings-modal');
+            } catch(err) {
+                alert("Error: " + err.message);
+            }
+        });
+
+        // Seed Data
+        window.seedInitialData = async function() {
+            // Confirmation logic is now handled in UI feedback, but we can keep one confirm if not triggered via empty state
+            const seedBtn = document.getElementById('seed-btn');
+            const seedStatus = document.getElementById('seed-status');
+            
+            if(seedBtn) {
+                seedBtn.disabled = true;
+                seedBtn.classList.add('opacity-50');
+                seedStatus.classList.remove('hidden');
+            }
+
+            const hardcodedData = [
+                // === DATA LAMA ===
+                // Transportasi
+                {
+                    groupName: "Digital Disruption Trans A", prodi: 'transportasi',
+                    topic: "Fraud & Cybercrime in Digital Payments",
+                    desc: "OTP theft, phishing, SIM swaps, social engineering, WhatsApp fraud.",
+                    members: [{ name: "Annisa Shifa", nim: "252604005" }, { name: "Fransiska Febria", nim: "252604020" }, { name: "Dimas Maulana", nim: "252604014" }, { name: "Galih Syah", nim: "252604021" }, { name: "Habib Muhaimin", nim: "252604023" }]
+                },
+                {
+                    groupName: "DIBUDAFIDA", prodi: 'transportasi',
+                    topic: "Traditional Vs Digital Payment in ID Markets",
+                    desc: "Payment System analysis.",
+                    members: [{ name: "Dika Amelia Sari S", nim: "252604012", role: "Design Visual" }, { name: "Bunga Viola", nim: "252604001", role: "Content Developer" }, { name: "Dava S", nim: "252604009", role: "Coordinator" }, { name: "Fitto Putra", nim: "252604019", role: "Q&A Specialist" }, { name: "Adittyo", nim: "252604002", role: "Researcher" }]
+                },
+                {
+                    groupName: "Transportasi B", prodi: 'transportasi',
+                    topic: "Digital Disruption",
+                    desc: "General Digital Disruption analysis.",
+                    members: [{ name: "Keicha", nim: "252604027", role: "Coordinator" }, { name: "Kharenia", nim: "252604028", role: "Content Developer" }, { name: "Habib", nim: "252604046", role: "Visual Designer" }, { name: "Farid", nim: "252604031", role: "Researcher" }, { name: "As ad", nim: "252604043", role: "Q&A Specialist" }]
+                },
+                {
+                    groupName: "Kelompok Dimas Yoga", prodi: 'transportasi',
+                    topic: "", desc: "Topik belum ditentukan/diserahkan.",
+                    members: [{ name: "Dimas Yoga Tama", nim: "252604014", role: "Moderator" }, { name: "Davan Risandry", nim: "252604010", role: "Q&A" }, { name: "Fausan Steyen P", nim: "252504017", role: "Presenter" }, { name: "Haikal Rezi A", nim: "252604024", role: "Presenter" }]
+                },
+                // PI
+                {
+                    groupName: "JOMOK HATERS", prodi: 'perdagangan',
+                    topic: "Cultural Influence", desc: "Impact of culture in international trade.",
+                    members: [{ name: "Ahmad Farhan M", nim: "250608002", role: "Content, Visual, Q&A" }, { name: "Alfi Shari Rizal", nim: "250608004", role: "Coordinator, Researcher, Q&A" }, { name: "Andronicus Zola F", nim: "250608005", role: "Researcher, Content, Q&A" }]
+                },
+                {
+                    groupName: "Regional Team", prodi: 'perdagangan',
+                    topic: "Regional Cooperation", desc: "Analysis of regional trade agreements.",
+                    members: [{ name: "Candra Lesmana", nim: "250608008", role: "Researcher" }, { name: "Chika Wahyu P", nim: "250608009", role: "Coordinator & Visual" }, { name: "Gita Rizkia A", nim: "250608012", role: "Content Developer" }]
+                },
+                {
+                    groupName: "PayMentors", prodi: 'perdagangan',
+                    topic: "From Cash to Cashless", desc: "Transition of payment methods.",
+                    members: [{ name: "Barel Sidqi", nim: "250608007", role: "Researcher, Content" }, { name: "Muhammad Bintang", nim: "256301039", role: "Visual Designer" }, { name: "Risma Aulia N.F", nim: "250608018", role: "Coordinator, Q&A" }]
+                },
+                {
+                    groupName: "E-commerce Team", prodi: 'perdagangan',
+                    topic: "E-commerce Revolution", desc: "Evolution of online marketplaces.",
+                    members: [{ name: "Aulia Fauzan", nim: "250608006", role: "Researcher" }, { name: "Ragil C. Moreno", nim: "250608017", role: "Content Developer" }, { name: "Widia Oktaverani", nim: "250608020", role: "Coordinator" }]
+                },
+                {
+                    groupName: "Fintech Team", prodi: 'perdagangan',
+                    topic: "Competition: Banks & Fintech", desc: "OVO, Gopay, DANA vs Banks.",
+                    members: [{ name: "Ais Yulis P. Sari", nim: "250608001", role: "Visual, Content" }, { name: "Fauzi Tri Wibowo", nim: "250608011", role: "Researcher" }, { name: "Saktya", nim: "250608019", role: "Coordinator, Q&A" }]
+                },
+                // === DATA BARU DITAMBAHKAN ===
+                {
+                    groupName: "Sustainable Transport Team", prodi: 'transportasi',
+                    topic: "Sustainable Transport",
+                    desc: "Focus on sustainability in transport systems.",
+                    members: [{name:"Fathan Anugerah R", nim:"252604016", role:"Coordinator"}, {name:"Daviq Ludfan F", nim:"252604011", role:"Researcher"}, {name:"Akhmad Bariq T", nim:"252604003", role:"Content Developer"}, {name:"Andrea Yudhistira", nim:"252604004", role:"Visual Designer"}, {name:"Firzan Syahroni", nim:"252604018", role:"Q&A Specialist"}]
+                },
+                {
+                    groupName: "Gojek vs Ojek Team", prodi: 'transportasi',
+                    topic: "Comparing Transportation: Gojek vs. Traditional Ojek",
+                    desc: "Business model comparison.",
+                    members: [{name:"Azael Deden S.U.P", nim:"252604007", role:"Coordinator"}, {name:"Darun Al Faini", nim:"252604008", role:"Researcher"}, {name:"Giacinta Derosari T", nim:"252604022", role:"Visual Designer"}, {name:"Johan Revanse R.P", nim:"252604025", role:"Content Developer"}]
+                },
+                {
+                    groupName: "TikTok Shop Analysis", prodi: 'perdagangan',
+                    topic: "The Impact of TikTok Shop on Traditional Indonesian Markets",
+                    desc: "Digital disruption in local markets.",
+                    members: [{name:"Ilyas Rohit", nim:"250608015", role:"Coordinator, Researcher"}, {name:"Moch Nur Chandra W.M", nim:"250608016", role:"Visual, Content"}, {name:"Humanida Agil A", nim:"250608014", role:"Q&A Specialist"}]
+                },
+                {
+                    groupName: "Kelompok Laras Dwi", prodi: 'transportasi',
+                    topic: "",
+                    desc: "Topik belum ditentukan.",
+                    members: [{name:"Laras Dwi Cahyani", nim:"252604030", role:"Visual Designer"}, {name:"Marina Laelani M", nim:"252604033", role:"Q&A Specialist"}, {name:"Muhamad Desta M", nim:"252604036", role:"Content Developer"}, {name:"Muhamad Fauqi M", nim:"252604037", role:"Researcher"}, {name:"Muhamad Reval N", nim:"252604038", role:"Coordinator"}]
+                },
+                {
+                    groupName: "Payment System Team", prodi: 'transportasi',
+                    topic: "Payment System",
+                    desc: "Analysis of payment systems.",
+                    members: [{name:"M. Bayu Dwi Ramadhan", nim:"252604044", role:"Coordinator"}, {name:"M. Naufan Al-Haafid", nim:"252604048", role:"Researcher"}, {name:"M. Raditya Fawzi S", nim:"252604049", role:""}, {name:"Johan Surya Adi N", nim:"252604026", role:"Visual Designer"}, {name:"M. Sigid Affandi", nim:"252604050", role:"Q&A Specialist"}]
+                },
+                {
+                    groupName: "Transport Evolution (Novaldi)", prodi: 'transportasi',
+                    topic: "Transportation Evolution",
+                    desc: "General evolution of transport.",
+                    members: [{name:"Novaldi Yudhiansyah", nim:"252604056", role:"Coordinator"}, {name:"Ryan Ardiansyah", nim:"252604063", role:"Researcher"}, {name:"Yudha Pranata", nim:"252604068", role:"Q&A Specialist"}, {name:"Muhammad Verdyan", nim:"252604051", role:"Visual Designer"}, {name:"Rafa Kurniansyah", nim:"252604058", role:"Content Developer"}]
+                },
+                {
+                    groupName: "Transport Evolution (Vannes)", prodi: 'transportasi',
+                    topic: "Comparing Transportation: Gojek vs. Traditional Ojek",
+                    desc: "Business model comparison (Group 2).",
+                    members: [{name:"Vannes Putra K", nim:"252604065", role:""}, {name:"Ulung Setyo Aji", nim:"252604064", role:""}, {name:"Nando Rohaniawan Y", nim:"252604055", role:""}, {name:"Risky Ananda", nim:"242504074", role:""}, {name:"Rifai Nanda P", nim:"252604062", role:""}]
+                },
+                {
+                    groupName: "Transportasi C", prodi: 'transportasi',
+                    topic: "Commerce Revolution: Online Shopping",
+                    desc: "How online shopping changed trade patterns.",
+                    members: [{name:"Zhielvie Acsha", nim:"252604070", role:""}, {name:"Vita Amelia Saputri", nim:"252604066", role:""}, {name:"Grace Elyn Irenatha", nim:"252604071", role:""}, {name:"Rahmandika Afif P", nim:"252604059", role:""}, {name:"Reyga Mozha", nim:"252604061", role:""}]
+                }
+            ];
+
+            try {
+                const colRef = collection(db, "artifacts", appId, "public", "data", "groups");
+                // Untuk demo yang aman, kita tidak menghapus collection, tapi menambahkan.
+                // Idealnya: check if exists before adding, tapi di sini kita "timpa" atau tambah baru.
+                for (const group of hardcodedData) {
+                    await addDoc(colRef, group);
+                }
+                // Refresh will happen automatically via onSnapshot
+            } catch (error) {
+                console.error(error);
+                alert("Gagal import: " + error.message);
+                if(seedBtn) seedBtn.disabled = false;
+            }
+        }
+
+        // Helper Modal Logic
+        window.openLoginModal = function() { toggleModal('login-modal'); }
+        window.closeModal = function(modalId) { 
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('opacity-100', 'pointer-events-auto');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            document.body.classList.remove('modal-active');
+        }
+        window.toggleModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            modal.classList.toggle('opacity-100');
+            modal.classList.toggle('pointer-events-auto');
+            document.body.classList.toggle('modal-active');
+        }
+        window.filterProdi = function(type) {
+            const transSection = document.getElementById('transportasi-section');
+            const piSection = document.getElementById('perdagangan-section');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            // Set global filter variable
+            currentFilter = type;
+
+            btns.forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-600');
+            });
+            const activeBtnIndex = type === 'all' ? 0 : type === 'transportasi' ? 1 : 2;
+            btns[activeBtnIndex].classList.remove('bg-white', 'text-gray-600');
+            btns[activeBtnIndex].classList.add('bg-blue-600', 'text-white');
+
+            renderAllGroups(); // Re-render to apply filter
+        }
+        
+        window.clearSearch = function() {
+            document.getElementById('search-input').value = '';
+            renderAllGroups();
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
